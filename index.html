@@ -55,7 +55,10 @@
                     <input type="text" id="zip" placeholder="CAP" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                     <input type="text" id="country" placeholder="Nazione" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                 </div>
-                
+
+                <p class="text-sm font-medium text-gray-600 pt-2">Note aggiuntive</p>
+                <textarea id="notes" placeholder="Inserisci eventuali note o informazioni aggiuntive..." rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
+
                 <!-- Pulsante di generazione (agisce al cambio dei dati) -->
                 <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Genera / Aggiorna QR Code
@@ -123,6 +126,18 @@
             if (street || city || province || zip || country) {
                 // Formato vCard per l'indirizzo: ;;Via;Città;Provincia;CAP;Nazione
                 vCard += `ADR;TYPE=WORK:;;${street};${city};${province};${zip};${country}\n`;
+            }
+
+            // Aggiungi le note se presenti
+            const notes = getVal('notes');
+            if (notes) {
+                // Escaping dei caratteri speciali per il formato vCard
+                const escapedNotes = notes
+                    .replace(/\\/g, '\\\\')
+                    .replace(/\n/g, '\\n')
+                    .replace(/,/g, '\\,')
+                    .replace(/;/g, '\\;');
+                vCard += `NOTE:${escapedNotes}\n`;
             }
 
             vCard += 'END:VCARD';
