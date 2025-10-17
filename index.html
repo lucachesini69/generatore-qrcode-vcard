@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generatore QR Code vCard Aziendale</title>
+    <!-- Tailwind CSS per lo stile -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Libreria per la generazione del QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Stile per nascondere le frecce negli input di tipo numero */
+        input[type='number']::-webkit-inner-spin-button,
+        input[type='number']::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type='number'] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-lg p-6 md:p-8 grid grid-cols-1 lg-grid-cols-2 gap-8">
+        
+        <!-- Sezione Modulo -->
+        <div class="flex flex-col">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Generatore vCard QR</h1>
+                <p class="text-gray-500 mt-2">Compila i campi per creare un QR code con il tuo biglietto da visita digitale.</p>
+            </div>
+
+            <form id="vcard-form" class="mt-6 space-y-4 flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="company" placeholder="Nome Azienda" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="title" placeholder="Ruolo (es. CEO)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="firstname" placeholder="Nome Contatto" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="lastname" placeholder="Cognome Contatto" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="tel" id="work-phone" placeholder="Telefono (Lavoro)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="tel" id="cell-phone" placeholder="Cellulare" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="email" id="email" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="url" id="website" placeholder="Sito Web (https://...)" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                
+                <p class="text-sm font-medium text-gray-600 pt-2">Indirizzo Lavoro</p>
+                <input type="text" id="street" placeholder="Via e Numero Civico" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="text" id="city" placeholder="Città" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="province" placeholder="Provincia" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="zip" placeholder="CAP" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <input type="text" id="country" placeholder="Nazione" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                
+                <!-- Pulsante di generazione (agisce al cambio dei dati) -->
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Genera / Aggiorna QR Code
+                </button>
+            </form>
+        </div>
+
+        <!-- Sezione QR Code -->
+        <div class="flex flex-col items-center justify-center bg-gray-50 rounded-lg p-6 min-h-[300px] lg:min-h-full">
+            <div id="qrcode-wrapper" class="p-4 bg-white rounded-lg shadow-inner hidden">
+                <div id="qrcode"></div>
+            </div>
+            <p id="placeholder-text" class="text-gray-500 mt-4 text-center">Il tuo QR Code apparirà qui.</p>
+            <button id="download-btn" class="hidden mt-6 bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-all shadow-md">
+                Scarica PNG
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const form = document.getElementById('vcard-form');
+        const qrcodeWrapper = document.getElementById('qrcode-wrapper');
+        const qrcodeContainer = document.getElementById('qrcode');
+        const placeholderText = document.getElementById('placeholder-text');
+        const downloadBtn = document.getElementById('download-btn');
+        let debounceTimeout;
+
+        // --- FIX 1: Inizializza l'istanza di QRCode una sola volta ---
+        // Questo evita di ricreare l'oggetto a ogni modifica, migliorando le performance.
+        const qrcodeInstance = new QRCode(qrcodeContainer, {
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H // Alta correzione di errore, ma meno dati
+        });
+
+        const createVCardString = () => {
+            const getVal = id => document.getElementById(id).value.trim();
+            const firstname = getVal('firstname');
+            const lastname = getVal('lastname');
+            const company = getVal('company');
+            
+            // Restituisce una stringa vuota se non ci sono dati essenziali
+            if (!firstname && !lastname && !company) return '';
+
+            let vCard = 'BEGIN:VCARD\n';
+            vCard += 'VERSION:3.0\n';
+            vCard += `N:${lastname};${firstname};;;\n`;
+            vCard += `FN:${firstname} ${lastname}\n`;
+
+            if (company) vCard += `ORG:${company}\n`;
+            if (getVal('title')) vCard += `TITLE:${getVal('title')}\n`;
+            if (getVal('work-phone')) vCard += `TEL;TYPE=WORK,VOICE:${getVal('work-phone')}\n`;
+            if (getVal('cell-phone')) vCard += `TEL;TYPE=CELL,VOICE:${getVal('cell-phone')}\n`;
+            if (getVal('email')) vCard += `EMAIL;TYPE=WORK,INTERNET:${getVal('email')}\n`;
+            if (getVal('website')) vCard += `URL:${getVal('website')}\n`;
+
+            const street = getVal('street');
+            const city = getVal('city');
+            const province = getVal('province');
+            const zip = getVal('zip');
+            const country = getVal('country');
+            if (street || city || province || zip || country) {
+                // Formato vCard per l'indirizzo: ;;Via;Città;Provincia;CAP;Nazione
+                vCard += `ADR;TYPE=WORK:;;${street};${city};${province};${zip};${country}\n`;
+            }
+
+            vCard += 'END:VCARD';
+            return vCard;
+        };
+
+        const generateQRCode = (e) => {
+            if (e) e.preventDefault();
+            
+            const vCardData = createVCardString();
+
+            if (!vCardData) {
+                qrcodeWrapper.classList.add('hidden');
+                placeholderText.innerText = "Il tuo QR Code apparirà qui.";
+                placeholderText.classList.remove('hidden');
+                downloadBtn.classList.add('hidden');
+                return;
+            }
+            
+            // --- FIX 2: Gestione dell'errore "code length overflow" ---
+            try {
+                // Usa il metodo .makeCode() per aggiornare un'istanza esistente
+                qrcodeInstance.makeCode(vCardData);
+                
+                // Se la generazione va a buon fine, mostra il QR
+                placeholderText.classList.add('hidden');
+                qrcodeWrapper.classList.remove('hidden');
+                downloadBtn.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Errore di overflow del QR Code:", error);
+                // Se fallisce, mostra un messaggio di errore all'utente
+                qrcodeWrapper.classList.add('hidden');
+                placeholderText.innerText = "Troppi dati inseriti! Riduci la lunghezza del testo per poter generare il QR Code.";
+                placeholderText.classList.remove('hidden');
+                downloadBtn.classList.add('hidden');
+            }
+        };
+
+        downloadBtn.addEventListener('click', () => {
+            const canvas = qrcodeContainer.querySelector('canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'vcard-qrcode.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        });
+
+        form.addEventListener('submit', generateQRCode);
+        
+        // --- FIX 3: Debouncing dell'input ---
+        // La generazione del QR code scatta solo quando l'utente smette di digitare per 300ms.
+        const debouncedGenerate = () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(generateQRCode, 300);
+        };
+
+        const inputs = form.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('input', debouncedGenerate);
+        });
+
+        // Genera il QR code al caricamento iniziale se ci sono dati (improbabile, ma buona pratica)
+        generateQRCode();
+    </script>
+
+</body>
+</html>
